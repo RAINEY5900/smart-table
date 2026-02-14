@@ -11,40 +11,48 @@ export function initTable(settings, onAction) {
     const {tableTemplate, rowTemplate, before, after} = settings;
     const root = cloneTemplate(tableTemplate);
 
-    //вывести дополнительные шаблоны до и после таблицы
-    before.reverse().forEach((el)=> {
-        root[el] = cloneTemplate(el);
-        root.container.prepend(root[el].container);
-    })
-    after.forEach((el) => {
-        root[el] = cloneTemplate(el);
-        root.container.append(root[el].container);
+    // @todo: #1.2 —  вывести дополнительные шаблоны до и после таблицы
+    before.reverse().forEach(subName => {
+        root[subName] = cloneTemplate(subName);
+        root.container.prepend(root[subName].container);
     })
 
-    //обработать события и вызвать onAction()
-    root.container.addEventListener('change', (e) =>{
-        onAction()});
+    after.forEach(subName => {
+        root[subName] = cloneTemplate(subName);
+        root.container.append(root[subName].container);
+    })
 
-    root.container.addEventListener('reset', (e) => {
-        setTimeout(onAction)}
+    
+    // @todo: #1.3 —  обработать события и вызвать onAction()
+    root.container.addEventListener(
+        'change', e => {
+            onAction();
+        }
     );
 
+    root.container.addEventListener(
+        'reset', e => {
+            setTimeout(onAction, 300);
+        }
+    )
 
-    root.container.addEventListener('submit', (e) => {
-        e.preventDefault();
-        onAction(e.submitter);
-    });
+    root.container.addEventListener(
+        'submit', e => {
+            e.preventDefault();
+            onAction(e.submitter);
+        }
+    )
 
-    // преобразовать данные в строки таблицы по шаблону
     const render = (data) => {
-        const nextRows = data.map(item => { 
+        // @todo: #1.1 — преобразовать данные в массив строк на основе шаблона rowTemplate
+        const nextRows = data.map(item => {
             const row = cloneTemplate(rowTemplate);
             Object.keys(item).forEach(key => {
-                if (Object.keys(row.elements).includes(key)) {
-                   row.elements[key].textContent = item[key]
-                } 
+                if (key in row.elements) {
+                    row.elements[key].textContent = item[key];
+                }
             })
-            return row.container
+            return row.container;
         });
         root.elements.rows.replaceChildren(...nextRows);
     }

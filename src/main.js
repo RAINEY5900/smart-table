@@ -4,14 +4,15 @@ import './style.css'
 import {data as sourceData} from "./data/dataset_1.js";
 
 import {initData} from "./data.js";
-import {processFormData, groupValueByName} from "./lib/utils.js";
+import {processFormData} from "./lib/utils.js";
 
 import {initTable} from "./components/table.js";
-// подключение
-import {initPagination} from "./components/pagination.js";
-import {initSorting} from "./components/sorting.js";
-import {initFiltering} from './components/filtering.js';
-import { initSearching } from './components/searching.js';
+// @todo: подключение
+import { initPagination } from "./components/pagination.js";
+import { initSorting } from "./components/sorting.js";
+import { initFiltering } from "./components/filtering.js";
+import { initSearching } from "./components/searching.js";
+
 
 // Исходные данные используемые в render()
 const {data, ...indexes} = initData(sourceData);
@@ -21,17 +22,22 @@ const {data, ...indexes} = initData(sourceData);
  * @returns {Object}
  */
 function collectState() {
-    
-    const state = processFormData(new FormData(sampleTable.container));
-    const rowsPerPage = parseInt(state.rowsPerPage);    // приведём количество страниц к числу
-    const page = parseInt(state.page ?? 1);                // номер страницы по умолчанию 1 и тоже число
-    // сгруппируем интервал фильтрации Total в массив
-    groupValueByName(state, 'total', 'From', 'To')
+    const { rowsPerPage, page, totalFrom, totalTo, ...state } = processFormData(new FormData(sampleTable.container));
+    const rowsPerPageInt = parseInt(rowsPerPage);
+    const pageInt = parseInt(page ?? 1);
+    const total = [null,  null];
+    const totalFromNum = Number(totalFrom);
+    if (totalFrom !== '' && !isNaN(totalFromNum))
+        total[0] = totalFromNum;
+    const totalToNum = Number(totalTo);
+    if (totalTo !== '' && !isNaN(totalTo))
+        total[1] = totalToNum;
 
     return {
         ...state,
-        rowsPerPage,
-        page
+        rowsPerPage: rowsPerPageInt,
+        page: pageInt,
+        total,
     };
 }
 
@@ -42,7 +48,7 @@ function collectState() {
 function render(action) {
     let state = collectState(); // состояние полей из таблицы
     let result = [...data]; // копируем для последующего изменения
-    // использование
+    // @todo: использование
     result = applySearching(result, state, action);
     result = applyFiltering(result, state, action);
     result = applySorting(result, state, action);
@@ -58,34 +64,31 @@ const sampleTable = initTable({
     after: ['pagination']
 }, render);
 
-// инициализация
-//- пагинация
+// @todo: инициализация
 const applyPagination = initPagination(
-    sampleTable.pagination.elements,             // передаём сюда элементы пагинации, найденные в шаблоне
-    (el, page, isCurrent) => {                    // и колбэк, чтобы заполнять кнопки страниц данными
+    sampleTable.pagination.elements,
+    (el, page, isCurrent) => {
         const input = el.querySelector('input');
         const label = el.querySelector('span');
-        input.value = page;
+        input.value = page,
         input.checked = isCurrent;
         label.textContent = page;
         return el;
     }
-);
+)
 
-// - сортировка
-const applySorting = initSorting([
+const applySorting = initSorting([        
     sampleTable.header.elements.sortByDate,
     sampleTable.header.elements.sortByTotal
 ]);
 
-// - фильтрация
-// передаём элементы фильтра
-// для элемента с именем searchBySeller устанавливаем массив продавцов
-const applyFiltering = initFiltering(sampleTable.filter.elements, {
-    searchBySeller: indexes.sellers,
+const applyFiltering = initFiltering(
+    sampleTable.filter.elements, {    
+        searchBySeller: indexes.sellers
 });
-// - поиск
+
 const applySearching = initSearching('search');
+
 
 const appRoot = document.querySelector('#app');
 appRoot.appendChild(sampleTable.container);
