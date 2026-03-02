@@ -1,3 +1,5 @@
+import {makeIndex} from "./lib/utils.js";
+
 const BASE_URL = 'https://webinars.webdev.education-services.ru/sp7-api';
 
 /**
@@ -5,9 +7,9 @@ const BASE_URL = 'https://webinars.webdev.education-services.ru/sp7-api';
  * @returns {{ getIndexes: Function, getRecords: Function }}
  */
 export function initData() {
-    /** @type {Object} Кешированные данные о продавцах */
+    /** @type {Object} Кешированные данные о продавцах (индекс id -> полное имя) */
     let sellers;
-    /** @type {Object} Кешированные данные о покупателях */
+    /** @type {Object} Кешированные данные о покупателях (индекс id -> полное имя) */
     let customers;
     /** @type {Object} Результат последнего запроса */
     let lastResult;
@@ -33,10 +35,12 @@ export function initData() {
      */
     const getIndexes = async () => {
         if (!sellers || !customers) {
-            [sellers, customers] = await Promise.all([
+            const [sellersRaw, customersRaw] = await Promise.all([
                 fetch(`${BASE_URL}/sellers`).then(res => res.json()),
                 fetch(`${BASE_URL}/customers`).then(res => res.json()),
             ]);
+            sellers = makeIndex(sellersRaw, 'id', v => `${v.first_name} ${v.last_name}`);
+            customers = makeIndex(customersRaw, 'id', v => `${v.first_name} ${v.last_name}`);
         }
 
         return { sellers, customers };
