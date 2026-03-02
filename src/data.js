@@ -3,10 +3,28 @@ import {makeIndex} from "./lib/utils.js";
 const BASE_URL = 'https://webinars.webdev.education-services.ru/sp7-api';
 
 /**
+ * Инициализирует данные из локального датасета (синхронная версия для первичного рендера)
+ * @param {Object} sourceData - Исходный датасет
+ * @returns {{ sellers: Object, customers: Object, data: Array }}
+ */
+export function initData(sourceData) {
+    const sellers = makeIndex(sourceData.sellers, 'id', v => `${v.first_name} ${v.last_name}`);
+    const customers = makeIndex(sourceData.customers, 'id', v => `${v.first_name} ${v.last_name}`);
+    const data = sourceData.purchase_records.map(item => ({
+        id: item.receipt_id,
+        date: item.date,
+        seller: sellers[item.seller_id],
+        customer: customers[item.customer_id],
+        total: item.total_amount
+    }));
+    return {sellers, customers, data};
+}
+
+/**
  * Инициализация API для работы с данными на сервере
  * @returns {{ getIndexes: Function, getRecords: Function }}
  */
-export function initData() {
+export function initServerApi() {
     /** @type {Object} Кешированные данные о продавцах (индекс id -> полное имя) */
     let sellers;
     /** @type {Object} Кешированные данные о покупателях (индекс id -> полное имя) */
