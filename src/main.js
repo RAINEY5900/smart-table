@@ -1,9 +1,7 @@
 import './fonts/ys-display/fonts.css'
 import './style.css'
 
-import {data as sourceData} from "./data/dataset_1.js";
-
-import {initData, initServerApi} from "./data.js";
+import {initServerApi} from "./data.js";
 import {processFormData} from "./lib/utils.js";
 
 import {initTable} from "./components/table.js";
@@ -13,10 +11,7 @@ import { initFiltering } from "./components/filtering.js";
 import { initSearching } from "./components/searching.js";
 
 
-// Локальные данные для первичного синхронного рендера
-const {data, ...indexes} = initData(sourceData);
-
-// Серверное API для всех последующих запросов
+// Серверное API
 const api = initServerApi();
 
 /**
@@ -95,19 +90,14 @@ const applySearching = initSearching('search');
 const appRoot = document.querySelector('#app');
 appRoot.appendChild(sampleTable.container);
 
-// Первичный синхронный рендер из локального датасета
-updateIndexes(sampleTable.filter.elements, {
-    searchBySeller: indexes.sellers
-});
-updatePagination(data.length, { limit: 10, page: 1 });
-sampleTable.render(data.slice(0, 10));
-
-
 /**
- * Инициализация серверного API: загрузка индексов в кеш и первый серверный рендер
+ * Инициализация серверного API: загрузка индексов и первый серверный рендер
  */
 async function init() {
-    await api.getIndexes();
+    const indexes = await api.getIndexes();
+    updateIndexes(sampleTable.filter.elements, {
+        searchBySeller: indexes.sellers
+    });
 }
 
 init().then(render);
